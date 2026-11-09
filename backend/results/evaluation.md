@@ -26,19 +26,19 @@ Exposure columns use trips whose baseline route is hit but not blocked (a blocke
 
 | Scenario | D* Lite nodes | Fresh ALT nodes | D* Lite ms | Fresh ALT ms | Same cost |
 |---|---|---|---|---|---|
-| flood | 0.0 | 2036.5 | 3.71 | 13.47 | 500/500 |
-| wildfire | 0.0 | 1760.5 | 9.8 | 11.73 | 500/500 |
-| landslide | 0.0 | 1784.0 | 2.58 | 11.96 | 500/500 |
-| earthquake | 0.0 | 1855.0 | 0.84 | 22.76 | 500/500 |
+| flood | 0.0 | 2036.5 | 3.88 | 14.01 | 500/500 |
+| wildfire | 0.0 | 1760.5 | 10.34 | 13.18 | 500/500 |
+| landslide | 0.0 | 1784.0 | 2.76 | 12.98 | 500/500 |
+| earthquake | 0.0 | 1855.0 | 0.35 | 14.5 | 500/500 |
 
 ## 4. Facility access (share of road network within 10 real car minutes of a facility)
 
 | Scenario | Hospitals normal | Hospitals in scenario | Hospitals cut off | Shelters normal | Shelters in scenario | Shelters cut off |
 |---|---|---|---|---|---|---|
-| flood | 92.0% | 91.52% | 2 | 63.01% | 61.82% | 2 |
-| wildfire | 92.0% | 90.75% | 1 | 63.01% | 62.14% | 0 |
-| landslide | 92.0% | 91.5% | 0 | 63.01% | 62.88% | 0 |
-| earthquake | 92.0% | 91.95% | 1 | 63.01% | 62.35% | 1 |
+| flood | 90.55% | 90.05% | 2 | 52.54% | 51.36% | 2 |
+| wildfire | 90.55% | 89.3% | 1 | 52.54% | 51.63% | 0 |
+| landslide | 90.55% | 90.03% | 0 | 52.54% | 52.33% | 0 |
+| earthquake | 90.55% | 90.49% | 1 | 52.54% | 51.64% | 1 |
 
 ## 5. Time versus exposure as lambda grows (trips whose baseline route was hit or blocked)
 
