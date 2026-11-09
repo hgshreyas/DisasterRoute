@@ -26,10 +26,10 @@ Exposure columns use trips whose baseline route is hit but not blocked (a blocke
 
 | Scenario | D* Lite nodes | Fresh ALT nodes | D* Lite ms | Fresh ALT ms | Same cost |
 |---|---|---|---|---|---|
-| flood | 0.0 | 2036.5 | 3.88 | 14.01 | 500/500 |
-| wildfire | 0.0 | 1760.5 | 10.34 | 13.18 | 500/500 |
-| landslide | 0.0 | 1784.0 | 2.76 | 12.98 | 500/500 |
-| earthquake | 0.0 | 1855.0 | 0.35 | 14.5 | 500/500 |
+| flood | 0.0 | 2036.5 | 3.06 | 11.23 | 500/500 |
+| wildfire | 0.0 | 1760.5 | 8.15 | 8.66 | 500/500 |
+| landslide | 0.0 | 1784.0 | 2.23 | 8.77 | 500/500 |
+| earthquake | 0.0 | 1855.0 | 0.29 | 9.33 | 500/500 |
 
 ## 4. Facility access (share of road network within 10 real car minutes of a facility)
 
