@@ -1,0 +1,234 @@
+{
+  "scenarios": [
+    {
+      "scenario": "flood",
+      "trips": 500,
+      "baseline_blocked_pct": 8.6,
+      "baseline_hit_pct": 17.4,
+      "aware_unreachable_pct": 0.4,
+      "affected_trips": 87,
+      "mean_exposure_baseline": 307.02,
+      "mean_exposure_aware": 72.36,
+      "exposure_reduction_pct": 76.4,
+      "median_extra_min": 3.96,
+      "mean_extra_min": 5.97,
+      "median_extra_pct": 8.9,
+      "dstar_nodes": 0.0,
+      "fresh_nodes": 2036.5,
+      "dstar_ms": 3.71,
+      "fresh_ms": 13.47,
+      "replan_same_cost": "500/500",
+      "hospital_pct_normal": 92.0,
+      "hospital_pct_scenario": 91.52,
+      "hospital_cut_off": 2,
+      "shelter_pct_normal": 63.01,
+      "shelter_pct_scenario": 61.82,
+      "shelter_cut_off": 2
+    },
+    {
+      "scenario": "wildfire",
+      "trips": 500,
+      "baseline_blocked_pct": 0.2,
+      "baseline_hit_pct": 6.4,
+      "aware_unreachable_pct": 0.2,
+      "affected_trips": 32,
+      "mean_exposure_baseline": 1426.7,
+      "mean_exposure_aware": 807.27,
+      "exposure_reduction_pct": 43.4,
+      "median_extra_min": 3.83,
+      "mean_extra_min": 5.45,
+      "median_extra_pct": 10.0,
+      "dstar_nodes": 0.0,
+      "fresh_nodes": 1760.5,
+      "dstar_ms": 9.8,
+      "fresh_ms": 11.73,
+      "replan_same_cost": "500/500",
+      "hospital_pct_normal": 92.0,
+      "hospital_pct_scenario": 90.75,
+      "hospital_cut_off": 1,
+      "shelter_pct_normal": 63.01,
+      "shelter_pct_scenario": 62.14,
+      "shelter_cut_off": 0
+    },
+    {
+      "scenario": "landslide",
+      "trips": 500,
+      "baseline_blocked_pct": 0.2,
+      "baseline_hit_pct": 5.4,
+      "aware_unreachable_pct": 0.0,
+      "affected_trips": 27,
+      "mean_exposure_baseline": 619.44,
+      "mean_exposure_aware": 235.57,
+      "exposure_reduction_pct": 62.0,
+      "median_extra_min": 3.61,
+      "mean_extra_min": 5.15,
+      "median_extra_pct": 8.8,
+      "dstar_nodes": 0.0,
+      "fresh_nodes": 1784.0,
+      "dstar_ms": 2.58,
+      "fresh_ms": 11.96,
+      "replan_same_cost": "500/500",
+      "hospital_pct_normal": 92.0,
+      "hospital_pct_scenario": 91.5,
+      "hospital_cut_off": 0,
+      "shelter_pct_normal": 63.01,
+      "shelter_pct_scenario": 62.88,
+      "shelter_cut_off": 0
+    },
+    {
+      "scenario": "earthquake",
+      "trips": 500,
+      "baseline_blocked_pct": 8.4,
+      "baseline_hit_pct": 8.6,
+      "aware_unreachable_pct": 0.2,
+      "affected_trips": 43,
+      "mean_exposure_baseline": 33.53,
+      "mean_exposure_aware": 33.53,
+      "exposure_reduction_pct": 0.0,
+      "median_extra_min": 2.35,
+      "mean_extra_min": 2.87,
+      "median_extra_pct": 5.7,
+      "dstar_nodes": 0.0,
+      "fresh_nodes": 1855.0,
+      "dstar_ms": 0.84,
+      "fresh_ms": 22.76,
+      "replan_same_cost": "500/500",
+      "hospital_pct_normal": 92.0,
+      "hospital_pct_scenario": 91.95,
+      "hospital_cut_off": 1,
+      "shelter_pct_normal": 63.01,
+      "shelter_pct_scenario": 62.35,
+      "shelter_cut_off": 1
+    }
+  ],
+  "lambda_sweep": [
+    {
+      "scenario": "flood",
+      "lam": 0.0,
+      "affected": 87,
+      "mean_exposure": 173.84,
+      "mean_extra_min": 5.14,
+      "unreachable": 2
+    },
+    {
+      "scenario": "flood",
+      "lam": 0.5,
+      "affected": 87,
+      "mean_exposure": 58.94,
+      "mean_extra_min": 5.97,
+      "unreachable": 2
+    },
+    {
+      "scenario": "flood",
+      "lam": 2.0,
+      "affected": 87,
+      "mean_exposure": 25.48,
+      "mean_extra_min": 7.22,
+      "unreachable": 2
+    },
+    {
+      "scenario": "flood",
+      "lam": 5.0,
+      "affected": 87,
+      "mean_exposure": 24.6,
+      "mean_extra_min": 7.32,
+      "unreachable": 2
+    },
+    {
+      "scenario": "wildfire",
+      "lam": 0.0,
+      "affected": 32,
+      "mean_exposure": 989.7,
+      "mean_extra_min": 4.81,
+      "unreachable": 1
+    },
+    {
+      "scenario": "wildfire",
+      "lam": 0.5,
+      "affected": 32,
+      "mean_exposure": 807.27,
+      "mean_extra_min": 5.45,
+      "unreachable": 1
+    },
+    {
+      "scenario": "wildfire",
+      "lam": 2.0,
+      "affected": 32,
+      "mean_exposure": 758.87,
+      "mean_extra_min": 6.91,
+      "unreachable": 1
+    },
+    {
+      "scenario": "wildfire",
+      "lam": 5.0,
+      "affected": 32,
+      "mean_exposure": 756.56,
+      "mean_extra_min": 7.2,
+      "unreachable": 1
+    },
+    {
+      "scenario": "landslide",
+      "lam": 0.0,
+      "affected": 27,
+      "mean_exposure": 424.54,
+      "mean_extra_min": 3.95,
+      "unreachable": 0
+    },
+    {
+      "scenario": "landslide",
+      "lam": 0.5,
+      "affected": 27,
+      "mean_exposure": 252.91,
+      "mean_extra_min": 5.15,
+      "unreachable": 0
+    },
+    {
+      "scenario": "landslide",
+      "lam": 2.0,
+      "affected": 27,
+      "mean_exposure": 181.16,
+      "mean_extra_min": 7.04,
+      "unreachable": 0
+    },
+    {
+      "scenario": "landslide",
+      "lam": 5.0,
+      "affected": 27,
+      "mean_exposure": 147.81,
+      "mean_extra_min": 10.28,
+      "unreachable": 0
+    },
+    {
+      "scenario": "earthquake",
+      "lam": 0.0,
+      "affected": 43,
+      "mean_exposure": 1.6,
+      "mean_extra_min": 2.87,
+      "unreachable": 1
+    },
+    {
+      "scenario": "earthquake",
+      "lam": 0.5,
+      "affected": 43,
+      "mean_exposure": 1.6,
+      "mean_extra_min": 2.87,
+      "unreachable": 1
+    },
+    {
+      "scenario": "earthquake",
+      "lam": 2.0,
+      "affected": 43,
+      "mean_exposure": 0.0,
+      "mean_extra_min": 2.92,
+      "unreachable": 1
+    },
+    {
+      "scenario": "earthquake",
+      "lam": 5.0,
+      "affected": 43,
+      "mean_exposure": 0.0,
+      "mean_extra_min": 2.92,
+      "unreachable": 1
+    }
+  ]
+}

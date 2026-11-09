@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Large or regenerable data (download with the scripts in backend/scripts)
+backend/data/*.graphml
+backend/data/*.npz
+backend/data/metro_raw.json
+backend/data/facilities_full.json
+backend/data/scenario_preview.html
+# scenarios you create in the browser stay on your machine
+backend/data/scenarios/custom.geojson
+
+# test output
+backend/tests/*.png
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

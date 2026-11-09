@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+osmnx>=2.0
+networkx>=3.2
+geopandas>=0.14
+shapely>=2.0
+scipy>=1.11
+pandas>=2.1
+numpy>=1.26
+psycopg[binary]>=3.1     # PostgreSQL storage (optional: the app runs without a database)

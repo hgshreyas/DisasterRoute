@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DisasterRoute Bengaluru</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root { --bg:#fff; --fg:#1f2937; --muted:#6b7280; --line:#e5e7eb; --accent:#2563eb;
+          --bad:#b91c1c; --good:#15803d; --chip:#f3f4f6; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+               color: var(--fg); background: var(--bg); }
+  #app { display: grid; grid-template-columns: 370px 1fr; height: 100%; }
+  #panel { overflow-y: auto; padding: 12px 14px 20px; border-right: 1px solid var(--line); }
+  #map { height: 100%; min-height: 300px; }
+  @media (max-width: 800px) {
+    #app { grid-template-columns: 1fr; grid-template-rows: minmax(0, 48vh) 1fr; }
+    #panel { border-right: 0; border-bottom: 1px solid var(--line); }
+  }
+  h1 { font-size: 18px; margin: 0 0 2px; } h1 small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  h2 { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 16px 0 6px; }
+  section { border-top: 1px solid var(--line); margin-top: 12px; }
+  select, input[type=number] { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
+                               font: inherit; background: #fff; color: var(--fg); }
+  button { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+           color: var(--fg); cursor: pointer; }
+  button:hover { background: var(--chip); }
+  button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .muted { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; margin-top: 6px; }
+  .grid2 label { font-size: 12px; color: var(--muted); display: block; }
+  label.inline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg); margin-top: 6px; }
+  input[type=range] { width: 100%; }
+  #error { background: #fef2f2; color: var(--bad); border: 1px solid #fecaca; border-radius: 6px;
+           padding: 8px 10px; margin: 8px 0; font-size: 13px; }
+  #statusbar { min-height: 20px; font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .spin { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent);
+          border-radius: 50%; animation: sp 0.8s linear infinite; display: inline-block; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  ul { list-style: none; padding: 0; margin: 6px 0 0; }
+  .note { font-size: 12px; color: #6b7280; margin-top: 4px; }
+  #closedList li { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 4px 8px;
+                   background: #fef2f2; border-radius: 6px; margin-bottom: 4px; font-size: 13px; }
+  #closedList button { padding: 0 7px; line-height: 20px; }
+  .geo input[type=search], .near-ctl input[type=datetime-local] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; min-width: 0; flex: 1; }
+  .geo .row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .geo label, .near-ctl label { font-size: 12px; color: var(--muted); display: block; margin-top: 4px; }
+  .near-ctl label.inline { display: inline-flex; gap: 4px; align-items: center; margin-left: 8px; }
+  .geolist { list-style: none; margin: 0 0 6px; padding: 0; border: 1px solid var(--line); border-radius: 6px; }
+  .geolist li { border-top: 1px solid var(--line); }   .geolist li:first-child { border-top: 0; }
+  .geolist button { width: 100%; text-align: left; border: 0; border-radius: 0; font-size: 12px; background: #fff; }
+  .near .row2 { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .near .row2 small { display: block; color: var(--muted); }
+  .near h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 10px 0 2px; }
+  .near .warn { color: var(--bad); font-weight: 600; }
+  .near button { padding: 2px 8px; white-space: nowrap; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+  .card .head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+  .card .line { width: 26px; height: 0; border-top: 4px solid; flex: none; }
+  .card .line.dash { border-top-style: dashed; }
+  .card .main { font-size: 20px; font-weight: 700; margin-top: 2px; }
+  .card .main.bad { color: var(--bad); } .card .main.good { color: var(--good); }
+  .card .sub { color: var(--muted); font-size: 12px; }
+  .pin { width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex;
+         align-items: center; justify-content: center; color: #fff; font-weight: 700; border: 2px solid #fff;
+         box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+  .pin span { transform: rotate(45deg); }
+  .foot { color: var(--muted); font-size: 11px; margin-top: 18px; }
+  .cursor-pick, .cursor-pick .leaflet-interactive { cursor: crosshair !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <h1>DisasterRoute <small>Bengaluru &middot; simulated hazards</small></h1>
+    <div id="error" role="alert" hidden></div>
+    <div id="statusbar"><span id="spinner" class="spin" hidden></span><span id="status"></span></div>
+
+    <section>
+      <h2>1. Scenario</h2>
+      <select id="scenario" aria-label="Hazard scenario"><option value="none">No hazard (normal conditions)</option></select>
+      <div id="scenarioInfo" class="muted"></div>
+      <div class="legend" id="hazLegend"></div>
+    </section>
+
+    <section>
+      <h2>2. Choose start and destination</h2>
+      <div class="geo">
+        <label for="qFrom">Start: type a place</label>
+        <div class="row"><input id="qFrom" type="search" placeholder="e.g. Silk Board junction" autocomplete="off"><button id="goFrom" type="button">Find</button></div>
+        <ul id="geoListA" class="geolist" hidden></ul>
+        <div class="row"><button id="useLoc" type="button">Use my current location</button>
+          <label class="inline"><input type="checkbox" id="followLoc"> follow me (live)</label></div>
+        <div id="locNote" class="note"></div>
+        <label for="qTo">Destination: type a place</label>
+        <div class="row"><input id="qTo" type="search" placeholder="e.g. Manipal Hospital Old Airport Road" autocomplete="off"><button id="goTo" type="button">Find</button></div>
+        <ul id="geoListB" class="geolist" hidden></ul>
+        <div class="muted">Place search uses OpenStreetMap (Nominatim), limited to Bengaluru. Or click the map below.</div>
+      </div>
+      <div class="modes" id="modes">
+        <button data-mode="route" class="on">Set route</button>
+        <button data-mode="close">Close a road</button>
+        <button data-mode="hazard">Add hazard</button>
+      </div>
+      <p id="hint" class="muted"></p>
+
+      <div id="hazardForm" hidden>
+        <div class="grid2">
+          <div><label for="hType">Hazard type</label>
+            <select id="hType">
+              <option value="flood">Flood</option>
+              <option value="smoke">Wildfire smoke</option>
+              <option value="hotspot">Fire hotspot (closes roads)</option>
+              <option value="landslide">Landslide risk</option>
+              <option value="block">Landslide blockage (closes roads)</option>
+              <option value="quake">Earthquake damage</option>
+            </select></div>
+          <div><label for="hLevel" id="hLevelLabel">Severity</label><select id="hLevel"></select></div>
+          <div><label for="hRadius">Radius (metres)</label><input id="hRadius" type="number" min="10" max="25000" step="10" value="500"></div>
+          <div><label for="hOnset">Starts after (minutes)</label><input id="hOnset" type="number" min="0" max="1440" step="5" value="0"></div>
+        </div>
+        <div class="row"><button id="hClear">Delete my hazards</button></div>
+      </div>
+
+      <div class="row"><button id="example">Load example</button><button id="clear">Clear route</button></div>
+      <ul id="closedList"></ul>
+    </section>
+
+    <section>
+      <h2>3. Routes</h2>
+      <div class="grid2">
+        <div><label for="mode">Travel by</label>
+          <select id="mode"><option value="car">Car</option><option value="bike">Bike or scooter</option>
+            <option value="bus">Bus (BMTC)</option><option value="metro">Metro (Namma Metro)</option></select></div>
+        <div><label for="traffic">Traffic</label>
+          <select id="traffic"><option value="auto" selected>Auto (from the time)</option><option value="light">Light (night)</option><option value="normal">Normal (all-day)</option>
+            <option value="peak">Peak (rush hour)</option></select></div>
+      </div>
+      <div id="modeNote" class="muted"></div>
+      <label class="inline"><input type="checkbox" id="showMetro"> Show metro lines and stations</label>
+      <div class="grid2">
+        <div><label for="lam">Avoid exposure: <b id="lamVal">0.5</b></label>
+          <input id="lam" type="range" min="0" max="2" step="0.1" value="0.5"></div>
+        <div><label for="detour">Max detour: <b id="detourVal">1.5</b>&times;</label>
+          <input id="detour" type="range" min="1.1" max="3" step="0.1" value="1.5"></div>
+      </div>
+      <div id="depRow" hidden>
+        <div class="muted">This scenario spreads over time. Leave after:</div>
+        <select id="depart"><option value="0">0 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option></select>
+      </div>
+      <div id="results"></div>
+      <div class="near-ctl">
+        <label for="needAt">When will you need a hospital or shelter?</label>
+        <input id="needAt" type="datetime-local">
+        <label class="inline"><input type="checkbox" id="openOnly" checked> only open then</label>
+      </div>
+      <div id="nearDest" class="near"></div>
+    </section>
+
+    <section>
+      <h2>4. Hospitals and shelters</h2>
+      <label class="inline"><input type="checkbox" id="showFac"> Show on map</label>
+      <div id="facNote" class="note"></div>
+      <div class="row"><button id="accessBtn">Hospital coverage in this scenario</button></div>
+      <div id="access" class="muted"></div>
+    </section>
+
+    <p class="foot">All hazards are simulated scenarios, not forecasts or real incident data.
+      Hazard positions and the risk rules are approximate design choices.</p>
+  </aside>
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const fmtMin = s => (s / 60).toFixed(1) + ' min';
+const fmtKm = m => (m / 1000).toFixed(1) + ' km';
+
+// ------------------------------------------------------------------ map
+const map = L.map('map').setView([12.97, 77.59], 11);
+const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'});
+const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+  {maxZoom: 19, attribution: 'Tiles &copy; Esri'});
+osm.addTo(map);
+L.control.layers({'OpenStreetMap': osm, 'Esri street map': esri}).addTo(map);
+
+const hazardLayer = L.layerGroup().addTo(map);
+const closeLayer = L.layerGroup().addTo(map);
+const routeLayer = L.layerGroup().addTo(map);
+const accessLayer = L.layerGroup().addTo(map);
+const nearLayer = L.layerGroup().addTo(map);
+const facLayer = L.layerGroup();
+const pinLayer = L.layerGroup().addTo(map);
+
+const HAZ_COLOR = {flood: '#1f77b4', wildfire: '#d95f02', wildfire_hotspot: '#b30000',
+  landslide: '#8c6d31', landslide_block: '#5b3a00', quake_damage: '#7b2d8e'};
+const HAZ_LABEL = {flood: 'Flood', wildfire: 'Smoke', wildfire_hotspot: 'Fire hotspot',
+  landslide: 'Landslide risk', landslide_block: 'Blockage', quake_damage: 'Quake damage'};
+const LEVEL_OPACITY = {low: .15, medium: .3, high: .5, light: .15, moderate: .3, heavy: .5};
+$('hazLegend').innerHTML = Object.keys(HAZ_COLOR).map(k =>
+  `<span><i class="sw" style="background:${HAZ_COLOR[k]}"></i>${HAZ_LABEL[k]}</span>`).join('');
+
+// ------------------------------------------------------------------ state + helpers
+const S = {mode: 'route', origin: null, dest: null, scenario: 'none', names: [], closed: [],
+           busy: 0, seq: 0, scheduled: false, hazGeo: null, facs: null};
+
+async function api(path, opt) {
+  let r;
+  try { r = await fetch(path, opt); }
+  catch (e) { throw new Error('Cannot reach the API. Is the server running?'); }
+  let body = null;
+  try { body = await r.json(); } catch (e) { /* no JSON body */ }
+  if (!r.ok) {
+    const d = body && body.detail;
+    throw new Error(d ? (typeof d === 'string' ? d : JSON.stringify(d)) : 'Request failed (HTTP ' + r.status + ')');
+  }
+  return body;
+}
+const qs = o => Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '')
+  .map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+// Traffic level from the clock. Peak windows follow TomTom's Bengaluru rush hours (morning and evening);
+// the exact hours, the weekend rule and "light at night" are assumptions.
+function trafficAt(d) {
+  const h = d.getHours() + d.getMinutes() / 60, wd = d.getDay();          // 0 = Sunday
+  if (h >= 22 || h < 6) return 'light';
+  if (wd >= 1 && wd <= 5 && ((h >= 8 && h < 11) || (h >= 17 && h < 21))) return 'peak';
+  return 'normal';
+}
+const modeParams = d => {
+  const t = $('traffic').value;
+  const m = $('mode').value;                  // facility and coverage times for a metro trip are by car
+  return {mode: m === 'metro' ? 'car' : m, traffic: t === 'auto' ? trafficAt(d || new Date()) : t};
+};
+function needDate() {                       // when the person will need care; falls back to now
+  const v = $('needAt').value, d = v ? new Date(v) : null;
+  return d && !isNaN(d) ? d : new Date();
+}
+const closedParam = () => S.closed.flatMap(c => c.ids).join(',');
+
+function busy(on, msg) {
+  S.busy = Math.max(0, S.busy + (on ? 1 : -1));
+  $('spinner').hidden = S.busy === 0;
+  $('status').textContent = S.busy ? (msg || 'Working...') : '';
+}
+function showError(e) { const b = $('error'); b.textContent = e.message || String(e); b.hidden = false; }
+function clearError() { $('error').hidden = true; }
+
+function pin(ll, letter, color) {
+  const icon = L.divIcon({className: '', iconSize: [26, 26], iconAnchor: [13, 26],
+    html: `<div class="pin" style="background:${color}"><span>${letter}</span></div>`});
+  return L.marker(ll, {icon}).addTo(pinLayer);
+}
+
+// ------------------------------------------------------------------ modes
+const HINT = {
+  route: 'Click the map to set the start (A), then the destination (B). Click again to start over.',
+  close: 'Click on a road to close it (both directions). Routes update straight away.',
+  hazard: 'Choose the hazard below, then click the map where it should appear.'
+};
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  $('hint').textContent = HINT[m];
+  $('hazardForm').hidden = m !== 'hazard';
+  $('map').classList.toggle('cursor-pick', true);
+}
+document.querySelectorAll('#modes button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+map.on('click', e => {
+  if (S.mode === 'route') setPoint(e.latlng);
+  else if (S.mode === 'close') closeRoadAt(e.latlng);
+  else addHazardAt(e.latlng);
+});
+
+// ------------------------------------------------------------------ route points
+function drawPins() {
+  pinLayer.clearLayers();
+  if (S.origin) pin(S.origin, 'A', '#16a34a');
+  if (S.dest) pin(S.dest, 'B', '#dc2626');
+}
+function setPoint(ll) {
+  const p = {lat: ll.lat, lng: ll.lng};
+  if (!S.origin || (S.origin && S.dest)) { S.origin = p; S.dest = null; routeLayer.clearLayers(); $('results').innerHTML = ''; clearNear(); }
+  else S.dest = p;
+  drawPins();
+  if (S.origin && S.dest) findRoutes();
+}
+$('clear').addEventListener('click', () => {
+  S.origin = S.dest = null; S.seq++; drawPins(); routeLayer.clearLayers(); $('results').innerHTML = ''; clearNear(); clearError();
+});
+$('example').addEventListener('click', async () => {
+  S.origin = {lat: 12.9177, lng: 77.5960}; S.dest = {lat: 12.9177, lng: 77.6500}; drawPins();
+  map.setView([12.9177, 77.623], 13);
+  const want = S.names.includes('flood') ? 'flood' : S.scenario;
+  if (want !== S.scenario) { $('scenario').value = want; await loadScenario(want); } else findRoutes();
+});
+
+// ------------------------------------------------------------------ routes
+function line(geom, style, tip) {
+  const ll = geom.coordinates.map(c => [c[1], c[0]]);
+  const l = L.polyline(ll, style);
+  if (tip) l.bindTooltip(tip, {sticky: true});
+  l.addTo(routeLayer);
+  return ll;
+}
+function card(color, dash, title, main, cls, sub) {
+  return `<div class="card"><div class="head"><span class="line${dash ? ' dash' : ''}" style="border-color:${color}"></span>${esc(title)}</div>` +
+         `<div class="main ${cls || ''}">${esc(main)}</div><div class="sub">${sub}</div></div>`;
+}
+
+async function findRoutes() {
+  if (!S.origin || !S.dest) return;
+  const my = ++S.seq;
+  routeLayer.clearLayers(); $('results').innerHTML = ''; clearNear(); clearError();
+  busy(true, 'Finding routes...');
+  try {
+    const base = {origin_lat: S.origin.lat, origin_lon: S.origin.lng, dest_lat: S.dest.lat,
+                  dest_lon: S.dest.lng, scenario: S.scenario, closed: closedParam(), ...modeParams()};
+    if ($('mode').value === 'metro') { await findMetro(my, base); return; }
+    const cmp = await api('/compare-scenario?' + qs({...base, lam: $('lam').value, detour: $('detour').value}));
+    let td = null;
+    if (S.scheduled) {
+      try { td = await api('/route/time-dependent?' + qs({...base, depart_min: $('depart').value})); }
+      catch (e) { td = {error: e.message}; }
+    }
+    if (my !== S.seq) return;
+    drawRoutes(cmp, td);
+    loadNearDest(my);
+    await showReplan(my, base);
+  } catch (e) {
+    if (my === S.seq) showError(e);
+  } finally { busy(false); }
+}
+
+// The hazards changed since the last search for the same trip: show how D* Lite repaired the route.
+async function showReplan(my, base) {
+  const od = [base.origin_lat, base.origin_lon, base.dest_lat, base.dest_lon].join(',');
+  const cur = {od, scenario: base.scenario, closed: base.closed};
+  const last = S.cur;
+  if (!last || last.od !== od) S.prev = null;                    // new trip: nothing to compare with
+  else if (last.scenario !== cur.scenario || last.closed !== cur.closed) S.prev = last;   // the hazards changed
+  S.cur = cur;
+  const prev = S.prev;                                           // kept while the same trip is re-searched
+  if (!prev) return;
+  try {
+    const r = await api('/replan?' + qs({origin_lat: base.origin_lat, origin_lon: base.origin_lon, dest_lat: base.dest_lat,
+      dest_lon: base.dest_lon, scenario_before: prev.scenario, closed_before: prev.closed,
+      scenario_after: base.scenario, closed_after: base.closed, lam: $('lam').value, mode: base.mode, traffic: base.traffic}));
+    if (my !== S.seq) return;
+    const d = r.dstar_repair, f = r.recompute;
+    const what = r.new_route === null ? 'The destination is now unreachable.'
+      : r.rerouted ? 'Your route changed because of this update.' : 'Your route is unchanged by this update.';
+    $('results').insertAdjacentHTML('beforeend',
+      `<div class="card"><div class="head">Rerouting after the change</div><div class="sub">${esc(what)} ` +
+      `${r.changed_roads} road${r.changed_roads === 1 ? '' : 's'} changed. D* Lite repaired the route by searching ` +
+      `${d.expanded} nodes (${d.ms} ms); planning again from scratch searches ${f.expanded} (${f.ms} ms). ` +
+      `${r.same_cost_as_recompute ? 'Both give the same route cost.' : 'Warning: costs differ.'}</div></div>`);
+  } catch (e) { /* the note is optional */ }
+}
+
+// ------------------------------------------------------------------ metro
+const metroLayer = L.layerGroup();
+async function drawMetroNetwork() {
+  if (!S.metro) S.metro = await api('/metro');
+  metroLayer.clearLayers();
+  S.metro.lines.forEach(l => {
+    L.polyline(l.stations.map(s => [s.lat, s.lon]), {color: l.colour, weight: 4, opacity: .75}).bindTooltip(l.name, {sticky: true}).addTo(metroLayer);
+    l.stations.forEach(s => L.circleMarker([s.lat, s.lon], {radius: 4, color: l.colour, weight: 2, fillColor: '#fff', fillOpacity: 1})
+      .bindTooltip(`${s.name} (${l.name})`).addTo(metroLayer));
+  });
+  metroLayer.addTo(map);
+}
+$('showMetro').addEventListener('change', async e => {
+  if (!e.target.checked) { map.removeLayer(metroLayer); return; }
+  clearError(); busy(true, 'Loading metro lines...');
+  try { await drawMetroNetwork(); } catch (err) { showError(err); e.target.checked = false; }
+  finally { busy(false); }
+});
+function legText(l) {
+  if (l.type === 'walk') return l.from ? `Walk ${l.minutes} min (${(l.length_m / 1000).toFixed(1)} km) from ${esc(l.from)} to your destination`
+                                       : `Walk ${l.minutes} min (${(l.length_m / 1000).toFixed(1)} km) to ${esc(l.to)}`;
+  if (l.type === 'wait') return `Wait about ${l.minutes} min for the ${esc(l.line)} train at ${esc(l.at)}`;
+  if (l.type === 'transfer') return `Change from ${esc(l.from_line)} to ${esc(l.to_line)} at ${esc(l.at)} (${l.minutes} min walk)`;
+  return `<b>${esc(l.line)}</b>: ${esc(l.from)} to ${esc(l.to)}, ${l.stops} stop${l.stops === 1 ? '' : 's'}, ${l.minutes} min`;
+}
+async function findMetro(my, base) {
+  const q = {origin_lat: base.origin_lat, origin_lon: base.origin_lon, dest_lat: base.dest_lat, dest_lon: base.dest_lon,
+             scenario: base.scenario, closed: base.closed, traffic: base.traffic};
+  const j = await api('/route/metro?' + qs(q));
+  let car = null;
+  try { car = await api('/route?' + qs({...q, mode: 'car', lam: $('lam').value})); } catch (e) { /* comparison is optional */ }
+  if (my !== S.seq) return;
+  if (!$('showMetro').checked) { $('showMetro').checked = true; try { await drawMetroNetwork(); } catch (e) { /* network drawing is optional */ } }
+  const pts = [];
+  let html = '';
+  if (!j.ok) {
+    html += card('#7c3aed', false, 'Metro journey', 'None', 'bad', esc(j.reason));
+  } else {
+    j.legs.forEach(l => {
+      if (!l.geometry) return;
+      const ll = l.geometry.coordinates.map(c => [c[1], c[0]]);
+      pts.push(...ll);
+      if (l.type === 'walk') L.polyline(ll, {color: '#6b7280', weight: 4, opacity: .9, dashArray: '2 8'}).bindTooltip('Walk').addTo(routeLayer);
+      else {
+        L.polyline(ll, {color: l.colour, weight: 8, opacity: .9}).bindTooltip(l.line, {sticky: true}).addTo(routeLayer);
+        [ll[0], ll[ll.length - 1]].forEach((p, i) => L.circleMarker(p, {radius: 6, color: '#111827', weight: 2, fillColor: '#fff', fillOpacity: 1})
+          .bindTooltip(i ? l.to : l.from).addTo(routeLayer));
+      }
+    });
+    const first = j.legs.find(l => l.type === 'metro');
+    html += card(first ? first.colour : '#7c3aed', false, 'Metro journey', fmtMin(j.total_s), 'good',
+      j.legs.map(legText).join('<br>'));
+    if (j.closed_stations.length) html += `<div class="muted">Stations closed by hazards: ${j.closed_stations.map(esc).join(', ')}.</div>`;
+  }
+  if (car) {
+    const ll = car.geometry.coordinates.map(c => [c[1], c[0]]);
+    pts.push(...ll);
+    L.polyline(ll, {color: '#2563eb', weight: 4, opacity: .6, dashArray: '8 8'}).bindTooltip('Car').addTo(routeLayer);
+    html += card('#2563eb', true, `By car for comparison (${modeParams().traffic} traffic)`, fmtMin(car.travel_time_s), '',
+      `${fmtKm(car.length_m)} &middot; hazard-aware route`);
+  }
+  html += `<div class="muted">Metro times are estimates: walking 4.5 km/h, a train every ${j.headway_min || ''} min on average, riding at about
+    35 km/h, no timetable. The metro track is drawn as straight lines between stations.</div>`;
+  $('results').innerHTML = html;
+  if (pts.length > 1) map.fitBounds([[Math.min(...pts.map(p => p[0])), Math.min(...pts.map(p => p[1]))],
+                                     [Math.max(...pts.map(p => p[0])), Math.max(...pts.map(p => p[1]))]], {padding: [40, 40]});
+  loadNearDest(my);
+}
+
+function drawRoutes(cmp, td) {
+  const b = cmp.baseline, ub = b.under_hazard, a = cmp.hazard_aware, lo = cmp.lowest_exposure;
+  const pts = [];
+  let html = '';
+
+  pts.push(...line(b.geometry, {color: '#2563eb', weight: 5, opacity: .8, dashArray: '8 8'}, 'Normal route'));
+  if (lo && (!a || lo.risk < a.risk - 0.5)) {
+    pts.push(...line(lo.geometry, {color: '#9333ea', weight: 4, opacity: .85}, 'Lowest exposure route'));
+  }
+  if (a) pts.push(...line(a.geometry, {color: '#16a34a', weight: 6, opacity: .9}, 'Hazard-aware route'));
+  if (td && td.geometry) pts.push(...line(td.geometry, {color: '#ea580c', weight: 4, opacity: .9, dashArray: '2 8'}, 'Time-dependent route'));
+
+  html += card('#2563eb', true, 'Normal route (ignores hazards)',
+    ub.blocked ? 'BLOCKED' : fmtMin(ub.travel_time_s), ub.blocked ? 'bad' : '',
+    ub.blocked
+      ? `${ub.blocked_edges} closed road segment(s) on this route. It takes ${fmtMin(b.travel_time_s)} in normal conditions.`
+      : `${fmtKm(b.length_m)} &middot; exposure ${ub.risk}`);
+
+  if (a) {
+    const d = a.travel_time_s - b.travel_time_s;
+    html += card('#16a34a', false, 'Hazard-aware route', fmtMin(a.travel_time_s), 'good',
+      `${fmtKm(a.length_m)} &middot; average ${(a.length_m / a.travel_time_s * 3.6).toFixed(0)} km/h door to door &middot; exposure ${a.risk} &middot; ${d >= 0 ? '+' : ''}${(d / 60).toFixed(1)} min vs normal` +
+      (S.scheduled ? '<br>Shows conditions at departure only. Hazards that start later are not included; see the orange route.' : ''));
+  } else {
+    html += card('#16a34a', false, 'Hazard-aware route', 'No route', 'bad',
+      'Closures and hazards cut the network between these two points.');
+  }
+  if (lo && (!a || lo.risk < a.risk - 0.5)) {
+    html += card('#9333ea', false, 'Lowest-exposure route', fmtMin(lo.travel_time_s), '',
+      `${fmtKm(lo.length_m)} &middot; exposure ${lo.risk}`);
+  }
+  if (td) {
+    html += td.error
+      ? card('#ea580c', true, 'Time-dependent route', 'None', 'bad', /No route/.test(td.error)
+          ? 'No trip between these points can be finished: once the later-starting hazards take effect, every route is cut. ' +
+            'The green route above is only valid if driven before they start.'
+          : esc(td.error))
+      : card('#ea580c', true, `Time-dependent route (leaves +${td.depart_min} min)`, fmtMin(td.travel_time_s), '',
+          `${fmtKm(td.length_m)} &middot; arrives at +${td.arrival_min} min while the hazard spreads`);
+  }
+  html += `<div class="muted">${cmp.pareto_front.length} trade-off route(s) between speed and exposure found.
+    Exposure is metres of road inside hazard zones weighted by severity.</div>`;
+  $('results').innerHTML = html;
+  if (pts.length > 1) map.fitBounds([[Math.min(...pts.map(p => p[0])), Math.min(...pts.map(p => p[1]))],
+                                     [Math.max(...pts.map(p => p[0])), Math.max(...pts.map(p => p[1]))]],
+                                    {padding: [40, 40]});
+}
+['lam', 'detour'].forEach(id => $(id).addEventListener('input', () => { $(id + 'Val').textContent = $(id).value; }));
+['lam', 'detour', 'depart'].forEach(id => $(id).addEventListener('change', findRoutes));
+
+// ------------------------------------------------------------------ scenarios
+function drawHazards(fc) {
+  L.geoJSON(fc, {
+    style: f => { const p = f.properties; const c = HAZ_COLOR[p.hazard] || '#333';
+      return {color: c, weight: 1, fillColor: c, fillOpacity: LEVEL_OPACITY[p.severity || p.intensity] || .4}; },
+    onEachFeature: (f, l) => { const p = f.properties;
+      l.bindPopup(`<b>${esc(p.name)}</b><br>${esc(p.hazard)} ${esc(p.severity || p.intensity || p.state || '')}` +
+                  `<br>starts after ${esc(p.onset_min)} min`); }
+  }).addTo(hazardLayer);
+}
+
+async function loadScenario(name) {
+  S.scenario = name; S.scheduled = false; S.hazGeo = null; hazardLayer.clearLayers(); accessLayer.clearLayers();
+  $('scenarioInfo').textContent = ''; $('depRow').hidden = true; $('access').textContent = ''; clearError();
+  if (name !== 'none') {
+    busy(true, 'Loading scenario... the first one can take a minute while roads are matched to hazards.');
+    try {
+      const d = await api('/scenarios/' + encodeURIComponent(name));
+      drawHazards(d.geojson); S.hazGeo = d.geojson;
+      const t = d.summary._totals;
+      S.scheduled = t.scheduled_edges > 0;
+      $('depRow').hidden = !S.scheduled;
+      $('scenarioInfo').textContent = `${t.closed_edges} road segments closed, ${t.penalized_edges} slowed, ` +
+        `${t.risky_edges} with exposure` + (S.scheduled ? `, ${t.scheduled_edges} change later` : '') + '.';
+    } catch (e) { showError(e); }
+    finally { busy(false); }
+  }
+  drawFacilities();
+  findRoutes();
+}
+$('scenario').addEventListener('change', e => loadScenario(e.target.value));
+
+async function refreshScenarios(select) {
+  const d = await api('/scenarios');
+  S.names = d.scenarios;
+  const sel = $('scenario');
+  sel.innerHTML = '<option value="none">No hazard (normal conditions)</option>' +
+    d.details.map(x => `<option value="${esc(x.name)}">${esc(x.name)}${x.user_created ? ' (mine)' : ''}</option>`).join('');
+  sel.value = select && S.names.includes(select) ? select : 'none';
+}
+
+// ------------------------------------------------------------------ close a road
+function renderClosed() {
+  closeLayer.clearLayers();
+  const ul = $('closedList'); ul.innerHTML = '';
+  S.closed.forEach((c, i) => {
+    L.polyline(c.geometry.coordinates.map(p => [p[1], p[0]]), {color: '#dc2626', weight: 8, opacity: .85})
+      .bindTooltip('Closed: ' + c.label, {sticky: true}).addTo(closeLayer);
+    const li = document.createElement('li');
+    const span = document.createElement('span');
+    span.textContent = `Closed: ${c.label} (${Math.round(c.length)} m)`;
+    const btn = document.createElement('button');
+    btn.textContent = '×'; btn.title = 'Reopen this road';
+    btn.addEventListener('click', () => { S.closed.splice(i, 1); renderClosed(); findRoutes(); });
+    li.append(span, btn); ul.append(li);
+  });
+}
+async function closeRoadAt(ll) {
+  clearError();
+  busy(true, 'Finding the road... the first lookup can take a minute.');
+  try {
+    const r = await api('/edges/near?' + qs({lat: ll.lat, lon: ll.lng, radius_m: 150, k: 1}));
+    const e = r.edges[0];
+    if (S.closed.some(c => c.ids.some(id => e.close_ids.includes(id)))) return;
+    S.closed.push({ids: e.close_ids, label: e.name || e.highway || 'unnamed road', length: e.length_m,
+                   geometry: e.geometry});
+    renderClosed();
+  } catch (err) { showError(err); busy(false); return; }
+  busy(false);
+  findRoutes();
+}
+
+// ------------------------------------------------------------------ type a place instead of clicking
+async function geocode(q) {
+  const url = 'https://nominatim.openstreetmap.org/search?' +
+    qs({q, format: 'jsonv2', limit: 6, countrycodes: 'in', viewbox: '77.35,13.20,77.85,12.80', bounded: 1});
+  const r = await fetch(url, {headers: {Accept: 'application/json'}});
+  if (!r.ok) throw new Error('Place search failed (' + r.status + '). Click the map instead.');
+  return r.json();
+}
+function placeFound(which, p, label) {
+  if (which === 'A') S.origin = p; else S.dest = p;
+  drawPins(); map.setView([p.lat, p.lng], 15);
+  $(which === 'A' ? 'qFrom' : 'qTo').value = label;
+  $('geoListA').hidden = true; $('geoListB').hidden = true;
+  if (S.origin && S.dest) findRoutes();
+}
+async function searchPlace(which) {
+  const q = $(which === 'A' ? 'qFrom' : 'qTo').value.trim();
+  $('geoListA').hidden = true; $('geoListB').hidden = true;
+  const list = $(which === 'A' ? 'geoListA' : 'geoListB'); list.innerHTML = ''; clearError();
+  if (q.length < 3) { showError(new Error('Type at least 3 letters of a place name.')); return; }
+  busy(true, 'Searching for ' + q + '...');
+  try {
+    const hits = await geocode(q);
+    if (!hits.length) { showError(new Error('No match for "' + q + '" inside Bengaluru. Try the area name, or click the map.')); return; }
+    hits.forEach(h => {
+      const li = document.createElement('li'), b = document.createElement('button');
+      b.type = 'button'; b.textContent = h.display_name;
+      b.addEventListener('click', () => placeFound(which, {lat: +h.lat, lng: +h.lon}, h.display_name.split(',').slice(0, 2).join(',')));
+      li.append(b); list.append(li);
+    });
+    list.hidden = false;
+  } catch (e) { showError(e); }
+  finally { busy(false); }
+}
+[['goFrom', 'qFrom', 'A'], ['goTo', 'qTo', 'B']].forEach(([btn, inp, w]) => {
+  $(btn).addEventListener('click', () => searchPlace(w));
+  $(inp).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchPlace(w); } });
+});
+
+// ------------------------------------------------------------------ live location as the start
+const BLR = {south: 12.80, north: 13.20, west: 77.35, east: 77.85};
+let watchId = null, lastFix = null;
+function inBengaluru(lat, lon) { return lat >= BLR.south && lat <= BLR.north && lon >= BLR.west && lon <= BLR.east; }
+function metresBetween(a, b) {
+  const p = Math.PI / 180, dy = (b.lat - a.lat) * 111320, dx = (b.lng - a.lng) * 111320 * Math.cos(a.lat * p);
+  return Math.hypot(dx, dy);
+}
+function locError(err) {
+  const why = {1: 'Location permission was denied. Allow it in the browser address bar, or type your start instead.',
+               2: 'Your position is not available right now.', 3: 'Finding your position took too long.'}[err.code];
+  $('locNote').textContent = why || 'Could not get your location.';
+}
+function applyFix(pos, follow) {
+  const p = {lat: pos.coords.latitude, lng: pos.coords.longitude}, acc = Math.round(pos.coords.accuracy || 0);
+  if (!inBengaluru(p.lat, p.lng)) {
+    $('locNote').textContent = 'You appear to be outside Bengaluru, which is the only area this app covers. Click the map or type a start.';
+    return;
+  }
+  if (follow && lastFix && metresBetween(lastFix, p) < 75) return;          // ignore GPS jitter
+  lastFix = p;
+  S.origin = p; drawPins();
+  $('qFrom').value = 'My location';
+  $('locNote').textContent = 'Start set from your location' + (acc ? ` (accuracy about ${acc} m` + (acc > 300 ? ', rough: it may be wifi or network based' : '') + ')' : '') + '.';
+  if (!follow) map.setView([p.lat, p.lng], 15);
+  if (S.origin && S.dest) findRoutes();
+}
+function useLocation() {
+  if (!navigator.geolocation) { $('locNote').textContent = 'This browser cannot share its location. Type a start instead.'; return; }
+  $('locNote').textContent = 'Finding your position...';
+  navigator.geolocation.getCurrentPosition(pos => applyFix(pos, false), locError,
+    {enableHighAccuracy: true, timeout: 15000, maximumAge: 0});
+}
+$('useLoc').addEventListener('click', useLocation);
+$('followLoc').addEventListener('change', e => {
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  if (!e.target.checked) { $('locNote').textContent = 'Stopped following your location.'; return; }
+  if (!navigator.geolocation) { e.target.checked = false; $('locNote').textContent = 'This browser cannot share its location.'; return; }
+  lastFix = null;
+  watchId = navigator.geolocation.watchPosition(pos => applyFix(pos, true), locError,
+    {enableHighAccuracy: true, maximumAge: 5000, timeout: 20000});
+});
+
+// ------------------------------------------------------------------ add a hazard
+const HTYPES = {
+  flood:     {hazard: 'flood', field: 'severity', label: 'Severity', opts: ['low', 'medium', 'high'], def: 'high', radius: 500},
+  smoke:     {hazard: 'wildfire', field: 'intensity', label: 'Intensity', opts: ['light', 'moderate', 'heavy'], def: 'heavy', radius: 1500},
+  hotspot:   {hazard: 'wildfire_hotspot', field: null, radius: 400},
+  landslide: {hazard: 'landslide', field: 'severity', label: 'Severity', opts: ['low', 'medium', 'high'], def: 'high', radius: 800},
+  block:     {hazard: 'landslide_block', field: null, radius: 150},
+  quake:     {hazard: 'quake_damage', field: 'state', label: 'Damage', opts: ['closed', 'partial'], def: 'closed', radius: 150}
+};
+function syncHazardForm() {
+  const t = HTYPES[$('hType').value];
+  $('hLevel').parentElement.hidden = !t.field;
+  if (t.field) {
+    $('hLevelLabel').textContent = t.label;
+    $('hLevel').innerHTML = t.opts.map(o => `<option value="${o}">${o}</option>`).join('');
+    $('hLevel').value = t.def;
+  }
+  $('hRadius').value = t.radius;
+}
+$('hType').addEventListener('change', syncHazardForm);
+
+async function addHazardAt(ll) {
+  clearError();
+  const t = HTYPES[$('hType').value];
+  const radius = Number($('hRadius').value), onset = Number($('hOnset').value);
+  if (!(radius >= 10 && radius <= 25000)) { showError(new Error('Radius must be between 10 and 25000 metres.')); return; }
+  if (!(onset >= 0 && onset <= 1440)) { showError(new Error('Start time must be between 0 and 1440 minutes.')); return; }
+  busy(true, 'Adding hazard...');
+  try {
+    let feats = [];
+    if (S.names.includes('custom')) feats = (await api('/scenarios/custom')).geojson.features;
+    const item = {shape: 'circle', lat: ll.lat, lon: ll.lng, radius_m: radius, hazard: t.hazard,
+                  name: 'My ' + (HAZ_LABEL[t.hazard] || t.hazard).toLowerCase(), onset_min: onset};
+    if (t.field) item[t.field] = $('hLevel').value;
+    feats.push(item);
+    await api('/scenarios', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                             body: JSON.stringify({name: 'custom', features: feats, overwrite: true})});
+    await refreshScenarios('custom');
+  } catch (e) { showError(e); busy(false); return; }
+  busy(false);
+  await loadScenario('custom');
+}
+$('hClear').addEventListener('click', async () => {
+  clearError();
+  try {
+    if (S.names.includes('custom')) await api('/scenarios/custom', {method: 'DELETE'});
+    await refreshScenarios('none'); await loadScenario('none');
+  } catch (e) { showError(e); }
+});
+
+// ------------------------------------------------------------------ hospitals and shelters near the destination
+function clearNear() { nearLayer.clearLayers(); const el = $('nearDest'); if (el) el.innerHTML = ''; }
+async function loadNearDest(my) {
+  const el = $('nearDest');
+  el.innerHTML = '<div class="muted">Looking for hospitals and shelters near your destination...</div>';
+  try {
+    const base = {lat: S.dest.lat, lon: S.dest.lng, scenario: S.scenario, closed: closedParam(), max_minutes: 30, limit: 60, ...modeParams(needDate()),
+                  at: $('needAt').value, open_only: $('openOnly').checked};
+    const [h, sh] = await Promise.all([api('/accessibility/origin?' + qs({...base, kind: 'hospital'})),
+                                       api('/accessibility/origin?' + qs({...base, kind: 'shelter'}))]);
+    if (my !== S.seq) return;
+    const pick = rows => rows.filter(r => r.reachable)
+      .map(r => ({...r, hz: hazardAt(r.lat, r.lon)}))
+      .sort((a, b) => (a.hz ? 1 : 0) - (b.hz ? 1 : 0) || (a.open_status === 'unknown' ? 1 : 0) - (b.open_status === 'unknown' ? 1 : 0) ||
+                      a.minutes_scenario - b.minutes_scenario).slice(0, 3);
+    S.near = [];
+    const block = (title, rows, all) => {
+      let html = `<h3>${title}</h3>`;
+      if (!rows.length) return html + `<div class="muted">None reachable within 30 minutes of your destination` +
+        (all.length ? ' (they are cut off by the hazard or closed roads).' : '.') + '</div>';
+      rows.forEach(r => {
+        const i = S.near.push(r) - 1;
+        const extra = r.extra_minutes > 0.05 ? ` (+${r.extra_minutes.toFixed(1)} min because of the hazard)` : '';
+        html += `<div class="row2"><div>${esc(r.name)}<small>${r.minutes_scenario.toFixed(1)} min from your destination${extra}` +
+          '<br>' + hoursText(r) +
+          (r.hz ? `<br><span class="warn">Inside hazard zone: ${esc(r.hz)}. Not a safe choice.</span>` : '') +
+          `</small></div><button data-near="${i}">Show route</button></div>`;
+      });
+      return html;
+    };
+    el.innerHTML = '<div class="muted"><b>Near your destination</b> (travel time from B under this scenario' + ($('mode').value === 'metro' ? ', by car' : '') + '). ' +
+      'Facilities inside a hazard zone are listed last. Ones known to be closed when you would arrive are hidden; ' +
+      'ones whose hours OpenStreetMap does not list are kept and labelled.</div>' +
+      block('Hospitals', pick(h.facilities), h.facilities) + block('Shelters', pick(sh.facilities), sh.facilities);
+    el.querySelectorAll('button[data-near]').forEach(b => b.addEventListener('click', () => showNearRoute(S.near[+b.dataset.near])));
+  } catch (e) { if (my === S.seq) el.innerHTML = `<div class="muted">Could not load nearby facilities: ${esc(e.message)}</div>`; }
+}
+function hoursText(r) {
+  if (r.open_status === 'open') return `Open when you arrive (${esc(r.hours)})`;
+  if (r.open_status === 'assumed_open') return 'Emergency department (hours not listed, assumed 24 h)';
+  if (r.open_status === 'closed') return `Closed when you arrive (${esc(r.hours)})`;
+  return r.hours ? `Hours: ${esc(r.hours)} (could not be read)` : 'Opening hours not listed';
+}
+function localNow() {
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+}
+$('needAt').value = localNow();
+['needAt', 'openOnly'].forEach(id => $(id).addEventListener('change', () => { if (S.dest) loadNearDest(S.seq); }));
+async function showNearRoute(f) {
+  clearError(); nearLayer.clearLayers(); busy(true, 'Routing to ' + f.name + '...');
+  try {
+    const r = await api('/route?' + qs({origin_lat: S.dest.lat, origin_lon: S.dest.lng, dest_lat: f.lat, dest_lon: f.lon,
+                                       scenario: S.scenario, closed: closedParam(), lam: $('lam').value, ...modeParams(needDate())}));
+    const ll = r.geometry.coordinates.map(c => [c[1], c[0]]);
+    L.polyline(ll, {color: '#0d9488', weight: 6, opacity: .95}).bindTooltip(`${f.name}: ${fmtMin(r.travel_time_s)}`, {sticky: true}).addTo(nearLayer);
+    L.circleMarker([f.lat, f.lon], {radius: 11, color: '#0d9488', weight: 3, fill: false}).bindTooltip(f.name).addTo(nearLayer);
+    map.fitBounds(ll, {padding: [40, 40]});
+  } catch (e) { showError(e); }
+  finally { busy(false); }
+}
+
+// ------------------------------------------------------------------ facilities and accessibility
+// Which hazard zone (if any) contains a point. Rings are GeoJSON [lon, lat].
+function inRing(lat, lon, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function hazardAt(lat, lon) {
+  if (!S.hazGeo) return null;
+  for (const f of S.hazGeo.features) {
+    const g = f.geometry; if (!g) continue;
+    const polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+    if (polys.some(p => inRing(lat, lon, p[0]) && !p.slice(1).some(h => inRing(lat, lon, h)))) {
+      const pr = f.properties || {};
+      return (pr.hazard || 'hazard').replace(/_/g, ' ') + (pr.severity ? ` (${pr.severity})` : '');
+    }
+  }
+  return null;
+}
+function drawFacilities() {
+  facLayer.clearLayers();
+  if (!$('showFac').checked || !S.facs) return;
+  let hit = 0;
+  S.facs.forEach(f => {
+    const hosp = f.kind === 'hospital', hz = hazardAt(f.lat, f.lon);
+    if (hz) hit++;
+    L.circleMarker([f.lat, f.lon], hz
+      ? {radius: hosp ? 8 : 7, color: '#111827', weight: 3, fillOpacity: .95, fillColor: hosp ? '#dc2626' : '#16a34a'}
+      : {radius: hosp ? 5 : 4, color: '#fff', weight: 1, fillOpacity: .95, fillColor: hosp ? '#dc2626' : '#16a34a'})
+      .bindTooltip(`${esc(f.name)} (${f.kind})` + (hz ? `<br><b>Inside hazard zone: ${esc(hz)}</b>` : '')).addTo(facLayer);
+  });
+  $('facNote').textContent = S.hazGeo
+    ? `${hit} of ${S.facs.length} facilities lie inside a hazard zone (thick black outline).` : '';
+}
+$('showFac').addEventListener('change', async e => {
+  if (!e.target.checked) { facLayer.clearLayers(); map.removeLayer(facLayer); $('facNote').textContent = ''; return; }
+  clearError(); busy(true, 'Loading facilities...');
+  try {
+    if (!S.facs) S.facs = (await api('/facilities?kind=all')).facilities;
+    facLayer.addTo(map); drawFacilities();
+  } catch (err) { showError(err); e.target.checked = false; }
+  finally { busy(false); }
+});
+
+$('accessBtn').addEventListener('click', async () => {
+  clearError(); accessLayer.clearLayers(); $('access').textContent = '';
+  busy(true, 'Computing coverage...');
+  try {
+    const d = await api('/accessibility?' + qs({scenario: S.scenario, closed: closedParam(), kind: 'hospital', threshold_min: 30, ...modeParams()}));
+    const lost = d.pct_points_lost;
+    let html = `Share of the road network within 30 min of a hospital: <b>${d.baseline.pct_within_threshold}%</b> normally, ` +
+      `<b>${d.scenario.pct_within_threshold}%</b> in this scenario (${lost > 0 ? '-' : '+'}${Math.abs(lost)} points).`;
+    if (d.newly_cut_off.length) {
+      html += `<br><b>${d.newly_cut_off.length}</b> hospital(s) cut off: ` + d.newly_cut_off.map(f => esc(f.name)).join(', ') + '.';
+      d.newly_cut_off.forEach(f => L.circleMarker([f.lat, f.lon], {radius: 11, color: '#dc2626', weight: 3, fill: false})
+        .bindTooltip(f.name + ' (cut off)').addTo(accessLayer));
+    } else html += '<br>No hospital is cut off.';
+    $('access').innerHTML = html;
+  } catch (e) { showError(e); }
+  finally { busy(false); }
+});
+
+const MODE_NOTE = {
+  car: 'Car speeds: TomTom Traffic Index 2025 for Bengaluru (all-day 16.6 km/h, rush hour 13.9 km/h); light traffic is an assumption.',
+  bike: 'Bike or scooter: an assumption, about 20% faster than a car in congestion.',
+  bus: 'Bus: BMTC averaged about 12 km/h in rush hour (2018 report, old figure); 14 and 18 km/h for other traffic and a 12 min wait plus walking are assumptions.'
+};
+function updateModeNote() {
+  if ($('mode').value === 'metro') {
+    const tr = modeParams().traffic, hw = {light: 10, normal: 7, peak: 5}[tr];
+    $('modeNote').textContent = `Metro: walk to a station (4.5 km/h, up to 30 min), wait about ${hw / 2} min (trains every ${hw} min is an assumption; ` +
+      'Wikipedia gives 3-15), ride at about 35 km/h (Namma Metro average, Wikipedia), change lines in 5 min, then walk out. ' +
+      'A station inside a closing hazard zone cannot be used. Estimates, no timetable.';
+    return;
+  }
+  const m = S.modes && S.modes.modes[$('mode').value];
+  const auto = $('traffic').value === 'auto', tr = modeParams().traffic;
+  $('modeNote').textContent = m ? `${m.label} at ${S.modes.traffic[tr].split(' (')[0].toLowerCase()} traffic` +
+    `${auto ? ' (detected from the current time)' : ''}: about ${m.speeds_kmh[tr]} km/h` + (m.fixed_min ? `, plus ${m.fixed_min} min wait and walking` : '') +
+    '. ' + MODE_NOTE[$('mode').value] + ' These are estimates, not live traffic.' : '';
+}
+['mode', 'traffic'].forEach(id => $(id).addEventListener('change', () => {
+  updateModeNote(); $('access').textContent = ''; accessLayer.clearLayers();
+  if (S.origin && S.dest) findRoutes();
+}));
+
+// ------------------------------------------------------------------ start
+(async function init() {
+  setMode('route'); syncHazardForm();
+  try { S.modes = await api('/modes'); updateModeNote(); } catch (e) { /* the note is optional */ }
+  try { await refreshScenarios('none'); }
+  catch (e) { showError(e); }
+})();
+</script>
+</body>
+</html>
